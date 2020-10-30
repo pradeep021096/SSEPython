@@ -8,6 +8,16 @@
             "Params" : {
                     "data" : 1
                 }
+        },
+        {
+            "Id" : 1,
+            "Name" : "Phrophet",
+            "Type" : 2,
+            "ReturnType": 1,
+            "Params" : {
+                    "data" : 1,
+                    "dim" : 0
+                }
         }
     ]
 }

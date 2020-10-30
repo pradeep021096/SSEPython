@@ -9,7 +9,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from datetime import datetime
+import matplotlib.pyplot as plt
+from fbprophet import Prophet
 
 import ServerSideExtension_pb2 as SSE
 import grpc
@@ -29,7 +30,8 @@ class QlikService(SSE.ConnectorServicer):
     @property
     def functions(self):
         return {
-            0: '_linearRegression'
+            0: '_linearRegression',
+            1: '_Prophet'
         }
 
     @staticmethod
@@ -66,6 +68,29 @@ class QlikService(SSE.ConnectorServicer):
 
         duals = iter([[SSE.Dual(numData=d)] for d in yhat])
         yield SSE.BundledRows(rows=[SSE.Row(duals=d) for d in duals])
+
+    @staticmethod
+    def _Prophet(request, context):
+
+        print('\n********** Prophet Invoked - Time Series Prediction **********')
+
+        df = pd.DataFrame(columns = ['ds','y'])
+
+        for request_rows in request:
+            for row in request_rows.rows:
+                df = df.append({'ds':row.duals[1].strData, 'y':row.duals[0].numData} , ignore_index=True)
+
+        df['ds'] = pd.to_datetime(df['ds'], format='%Y-%m-%d')
+
+        model = Prophet().fit(df)
+        future_data = model.make_future_dataframe(periods=12, freq = 'm')
+        future_data = model.predict(future_data)
+
+        print(future_data[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+        duals = iter([[SSE.Dual(numData=d)] for d in future_data['yhat']])
+
+        yield SSE.BundledRows(rows=[SSE.Row(duals=d) for d in duals])
+
 
     def GetCapabilities(self, request, context):
         print('GetCapabilities')
