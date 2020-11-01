@@ -15,7 +15,6 @@ from fbprophet import Prophet
 import ServerSideExtension_pb2 as SSE
 import grpc
 
-from pprint import pprint
 
 class QlikService(SSE.ConnectorServicer):
 
@@ -31,7 +30,8 @@ class QlikService(SSE.ConnectorServicer):
     def functions(self):
         return {
             0: '_linearRegression',
-            1: '_Prophet'
+            1: '_Prophet',
+            2: '_ProphetExtract',
         }
 
     @staticmethod
@@ -50,14 +50,14 @@ class QlikService(SSE.ConnectorServicer):
         df = pd.DataFrame([(row.duals[0].numData) \
                           for request_rows in request \
                           for row in request_rows.rows ] \
-                          ,columns=['Y'])
+                          ,columns=['y'])
 
         print('\n****** Qlik Request Data **********')
         print(df.head())
 
         X = pd.Series(range(0,len(df)))
         reg = LinearRegression().fit( X.values.reshape(-1,1) \
-                           ,df['Y'])
+                           ,df['y'])
 
         print('\n********** Fitting Linear Regression Model **********')
 
@@ -69,33 +69,70 @@ class QlikService(SSE.ConnectorServicer):
         duals = iter([[SSE.Dual(numData=d)] for d in yhat])
         yield SSE.BundledRows(rows=[SSE.Row(duals=d) for d in duals])
 
+
     @staticmethod
     def _Prophet(request, context):
 
-        print('\n********** Prophet Invoked - Time Series Prediction **********')
+        df = pd.DataFrame([ (row.duals[1].numData, row.duals[0].numData) \
+                        for request_rows in request \
+                        for row in request_rows.rows ] \
+                        ,columns = ['ds', 'y'])
 
-        df = pd.DataFrame(columns = ['ds','y'])
+        df['ds'] = pd.to_datetime( df['ds'] ,unit = 'D' ,origin = pd.Timestamp('1899-12-30'))
 
-        for request_rows in request:
-            for row in request_rows.rows:
-                df = df.append({'ds':row.duals[1].strData, 'y':row.duals[0].numData} , ignore_index=True)
-
-        df['ds'] = pd.to_datetime(df['ds'], format='%Y-%m-%d')
+        df.drop(df.tail(12).index,inplace = True)
 
         model = Prophet().fit(df)
         future_data = model.make_future_dataframe(periods=12, freq = 'm')
         future_data = model.predict(future_data)
 
-        print(future_data[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
-        duals = iter([[SSE.Dual(numData=d)] for d in future_data['yhat']])
+        #print(future_data[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
 
+        duals = iter([[SSE.Dual(numData=d)] for d in future_data['yhat']])
         yield SSE.BundledRows(rows=[SSE.Row(duals=d) for d in duals])
+
+
+    @staticmethod
+    def _ProphetExtract(request, context):
+
+        df = pd.DataFrame([ (row.duals[1].numData, row.duals[0].numData) \
+                        for request_rows in request \
+                        for row in request_rows.rows ] \
+                        ,columns = ['ds', 'y'])
+        df_orig = df[:]
+
+        df['ds'] = pd.to_datetime( df['ds'] ,unit = 'D' ,origin = pd.Timestamp('1899-12-30'))
+        df.drop(df.tail(36).index,inplace = True)
+
+        model = Prophet().fit(df)
+        future_data = model.make_future_dataframe(periods=36, freq = 'm')
+        future_data = model.predict(future_data)
+
+        #print(future_data.dtypes)
+        #print(future_data)
+        #print(len(future_data))
+
+        dualsList = []
+        dualsList.append([SSE.Dual(numData=d) for d in future_data['yhat']])
+        dualsList.append([SSE.Dual(numData=d) for d in future_data['yhat_lower']])
+        dualsList.append([SSE.Dual(numData=d) for d in future_data['yhat_upper']])
+        dualsList.append([SSE.Dual(numData=d) for d in df_orig['ds']])
+        dualsList.append([SSE.Dual(numData=d) for d in df_orig['y']])
+
+        response_rows = []
+        for i in range(len(df_orig)):
+            duals = [dualsList[j][i] for j in range(len(dualsList))]
+            response_rows.append(SSE.Row(duals = duals))
+
+        #print(SSE.BundledRows(rows=response_rows))
+
+        yield SSE.BundledRows(rows=response_rows)
 
 
     def GetCapabilities(self, request, context):
         print('GetCapabilities')
         capabilities = SSE.Capabilities(allowScript=False,
-                                        pluginIdentifier='MLPython',
+                                        pluginIdentifier='SSEPython',
                                         pluginVersion='v0.1')
 
         with open(self.function_definitions) as json_file:

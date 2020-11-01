@@ -16,7 +16,17 @@
             "ReturnType": 1,
             "Params" : {
                     "data" : 1,
-                    "dim" : 0
+                    "dim_date" : 1
+                }
+        },
+        {
+            "Id" : 2,
+            "Name" : "Phrophet_Extract",
+            "Type" : 2,
+            "ReturnType": 1,
+            "Params" : {
+                    "data" : 1,
+                    "dim_date" : 1
                 }
         }
     ]
