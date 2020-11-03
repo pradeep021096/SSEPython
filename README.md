@@ -6,7 +6,7 @@
 ![Forecasing](docs/img/Sheet_Forecasting.png)
 
 ## About
-Plugin to add machine learning capabilities in Qlik usine SSE( Server Side Extension)
+Plugin to add machine learning capabilities in Qlik using SSE (Server Side Extension)
 
 ## Setup
 
