@@ -6,7 +6,9 @@
 ![Forecasing](docs/img/Sheet_Forecasting.png)
 
 ## About
-Plugin to add machine learning capabilities in Qlik using SSE (Server Side Extension)
+Python Plugin to add Machine Learning capabilities in Qlik using SSE (Server Side Extension). Time series forecasting supports both script execution and expression capability calls.
+
+Inprogress - (Email capability) for Prediction Summary.
 
 ## Setup
 
@@ -52,7 +54,7 @@ Link to Plugin Code - [SSEPython.py](main/SSEPython.py)
 ### Time Series Forecasting Using Prophet
 ![Forecasting](/docs/img/Main_Code_Prophet.PNG)
 
-### Time Series Forecasting Using Prophet - Multi Fields
+### Time Series Forecasting Using Prophet - Multi Field Return
 ![Forecasting](/docs/img/Main_Code_Prophet_Extract.PNG)
 
 ### Plugin Function Declaration JSON
