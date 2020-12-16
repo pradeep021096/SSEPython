@@ -46,7 +46,7 @@ Inprogress - (Email capability) for Prediction Summary.
 
 ## Code Samples
 
-Link to Plugin Code - [SSEPython.py](main/SSEPython.py)
+Link to Plugin Code - [SSEPython.py](SSEPython.py)
 
 ### Linear Regression
 ![Linear Regresssion Code](/docs/img/Main_Code_LinearRegression.PNG)
